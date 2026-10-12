@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ApiError, claimsApi } from '../api/claimsApi';
 import type { DealerDto } from '../api/types';
 import {
   emptyForm,
@@ -9,6 +8,7 @@ import {
   type FormErrors,
 } from '../claim/claimForm';
 import { todayIso } from '../lib/format';
+import { href } from '../lib/useHashRoute';
 import { normalizeVin } from '../lib/vin';
 import { AttachmentPicker } from './AttachmentPicker';
 import { Field, describedBy } from './Field';
@@ -20,28 +20,25 @@ export interface SubmitInput {
 }
 
 interface Props {
+  dealers: DealerDto[] | null;
+  dealerError: string | null;
+  /** Dealer chosen on the dashboard; preselected in the form. */
+  initialDealerCode: string;
   onSubmit: (input: SubmitInput) => Promise<void>;
   serverErrors: FormErrors;
   serverMessage: string | null;
 }
 
-export function ClaimFormPage({ onSubmit, serverErrors, serverMessage }: Props) {
-  const [dealers, setDealers] = useState<DealerDto[] | null>(null);
-  const [dealerError, setDealerError] = useState<string | null>(null);
-  const [form, setForm] = useState<ClaimFormState>(() => emptyForm());
+export function ClaimFormPage({ dealers, dealerError, initialDealerCode, onSubmit, serverErrors, serverMessage }: Props) {
+  const [form, setForm] = useState<ClaimFormState>(() => emptyForm(initialDealerCode));
   const [errors, setErrors] = useState<FormErrors>({});
   const [attempted, setAttempted] = useState(false);
   const [busy, setBusy] = useState(false);
 
+  // The dealer list may arrive after the form mounts.
   useEffect(() => {
-    claimsApi
-      .getMyDealers()
-      .then((list) => {
-        setDealers(list);
-        if (list.length === 1) setForm((f) => ({ ...f, dealerCode: list[0].code }));
-      })
-      .catch((err: ApiError) => setDealerError(err.message));
-  }, []);
+    if (!form.dealerCode && initialDealerCode) setForm((f) => ({ ...f, dealerCode: initialDealerCode }));
+  }, [initialDealerCode, form.dealerCode]);
 
   useEffect(() => setErrors((e) => ({ ...e, ...serverErrors })), [serverErrors]);
 
@@ -76,6 +73,9 @@ export function ClaimFormPage({ onSubmit, serverErrors, serverMessage }: Props) 
   return (
     <form className="claim-form" onSubmit={handleSubmit} noValidate>
       <div className="page-intro">
+        <a className="back-link" href={href('/', { dealer: form.dealerCode || initialDealerCode })}>
+          ← Back to dashboard
+        </a>
         <h1>Report a transportation damage claim</h1>
         <p>
           Use this form to report vehicle damage found at delivery. Fields marked <span className="field__req">*</span> are

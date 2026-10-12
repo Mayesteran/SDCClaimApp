@@ -9,9 +9,10 @@ interface Props {
   retrying: boolean;
   onRetryUpload: () => void;
   onNewClaim: () => void;
+  onDashboard: () => void;
 }
 
-export function SubmittedPage({ claim, failedFiles, uploadError, retrying, onRetryUpload, onNewClaim }: Props) {
+export function SubmittedPage({ claim, failedFiles, uploadError, retrying, onRetryUpload, onNewClaim, onDashboard }: Props) {
   const t = claim.totals;
 
   return (
@@ -126,6 +127,9 @@ export function SubmittedPage({ claim, failedFiles, uploadError, retrying, onRet
       </section>
 
       <div className="submit-bar">
+        <button type="button" className="btn btn--secondary btn--lg" onClick={onDashboard}>
+          Back to dashboard
+        </button>
         <button type="button" className="btn btn--primary btn--lg" onClick={onNewClaim}>
           Report another claim
         </button>

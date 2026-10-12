@@ -2,7 +2,7 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="site-header__inner">
-        <a className="brand" href="/">
+        <a className="brand" href="#/">
           <svg className="brand__mark" viewBox="0 0 64 44" aria-hidden="true">
             <ellipse cx="32" cy="22" rx="31" ry="21" fill="none" stroke="currentColor" strokeWidth="2.5" />
             <g fill="currentColor">

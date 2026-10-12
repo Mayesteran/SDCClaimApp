@@ -16,6 +16,13 @@ export function formatDate(iso: string | null): string {
   return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+export function formatDateTime(iso: string | null): string {
+  if (!iso) return '—';
+  // The API returns UTC timestamps without a zone suffix for *Utc fields.
+  const d = new Date(/[zZ]|[+-]\d\d:\d\d$/.test(iso) ? iso : `${iso}Z`);
+  return d.toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
+
 /** Today in the user's time zone as yyyy-mm-dd (for <input type="date" max>). */
 export function todayIso(): string {
   const d = new Date();

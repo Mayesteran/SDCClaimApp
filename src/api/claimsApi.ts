@@ -1,4 +1,13 @@
-import type { AttachmentDto, ClaimDetailDto, CreateClaimRequest, DealerDto } from './types';
+import type {
+  AttachmentDto,
+  ClaimDetailDto,
+  ClaimQuery,
+  ClaimSummaryDto,
+  CreateClaimRequest,
+  DealerDto,
+  PagedResult,
+  StatusDto,
+} from './types';
 
 const BASE = '/api/v1/transportation-claims';
 
@@ -46,6 +55,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const claimsApi = {
   getMyDealers: () => request<DealerDto[]>('/my-dealers'),
 
+  getStatuses: () => request<StatusDto[]>('/statuses'),
+
+  searchClaims: (query: ClaimQuery, signal?: AbortSignal) => {
+    const params = new URLSearchParams();
+    for (const [k, v] of Object.entries(query)) if (v !== undefined && v !== '') params.set(k, String(v));
+    return request<PagedResult<ClaimSummaryDto>>(`/?${params}`, { signal });
+  },
+
   createClaim: (claim: CreateClaimRequest) =>
     request<ClaimDetailDto>('/', {
       method: 'POST',
@@ -59,5 +76,8 @@ export const claimsApi = {
     return request<AttachmentDto[]>(`/${headerId}/attachments`, { method: 'POST', body: form });
   },
 
-  getClaim: (headerId: number) => request<ClaimDetailDto>(`/${headerId}`),
+  getClaim: (headerId: number, signal?: AbortSignal) => request<ClaimDetailDto>(`/${headerId}`, { signal }),
+
+  /** Same-origin URL; the dev proxy (or a future auth layer) adds the credentials. */
+  attachmentUrl: (headerId: number, attachmentId: number) => `${BASE}/${headerId}/attachments/${attachmentId}`,
 };

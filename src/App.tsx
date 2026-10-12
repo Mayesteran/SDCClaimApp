@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ApiError, claimsApi } from './api/claimsApi';
-import { ATTACHMENT_LIMITS, type ClaimDetailDto } from './api/types';
+import { ATTACHMENT_LIMITS, type ClaimDetailDto, type DealerDto } from './api/types';
 import { toRequest, type FormErrors, type PickedFile } from './claim/claimForm';
 import { ClaimFormPage, type SubmitInput } from './components/ClaimFormPage';
+import { Dashboard } from './components/Dashboard';
 import { SiteFooter, SiteHeader } from './components/SiteHeader';
 import { SubmittedPage } from './components/SubmittedPage';
+import { navigate, useHashRoute } from './lib/useHashRoute';
 
 type Progress = { step: 'claim' } | { step: 'files'; done: number; total: number };
 
@@ -62,12 +64,34 @@ async function uploadInBatches(headerId: number, files: PickedFile[], onProgress
 }
 
 export default function App() {
-  const [formKey, setFormKey] = useState(0);
+  const route = useHashRoute();
+  const [dealers, setDealers] = useState<DealerDto[] | null>(null);
+  const [dealersError, setDealersError] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [serverErrors, setServerErrors] = useState<FormErrors>({});
   const [serverMessage, setServerMessage] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+
+  useEffect(() => {
+    claimsApi
+      .getMyDealers()
+      .then(setDealers)
+      .catch((err: ApiError) => setDealersError(err.message));
+  }, []);
+
+  // The dealer in the URL, if the user may report for it; otherwise their first dealer.
+  const requested = route.params.get('dealer') ?? '';
+  const dealerCode = dealers?.some((d) => d.code === requested) ? requested : (dealers?.[0]?.code ?? '');
+
+  // Each visit to the form starts clean.
+  useEffect(() => {
+    if (route.path === '/new') {
+      setServerErrors({});
+      setServerMessage(null);
+    }
+    window.scrollTo({ top: 0 });
+  }, [route.path]);
 
   async function submit({ form }: SubmitInput) {
     setServerErrors({});
@@ -100,7 +124,7 @@ export default function App() {
 
     setProgress(null);
     setSubmitted({ claim, failedFiles, uploadError });
-    window.scrollTo({ top: 0 });
+    navigate('/submitted', { dealer: claim.dealer.code });
   }
 
   async function retryUpload() {
@@ -113,31 +137,38 @@ export default function App() {
     setRetrying(false);
   }
 
-  function newClaim() {
-    setSubmitted(null);
-    setServerErrors({});
-    setServerMessage(null);
-    setFormKey((k) => k + 1); // remounts the form with empty state
-    window.scrollTo({ top: 0 });
+  let page: JSX.Element;
+  if (route.path === '/new') {
+    page = (
+      <ClaimFormPage
+        dealers={dealers}
+        dealerError={dealersError}
+        initialDealerCode={dealerCode}
+        onSubmit={submit}
+        serverErrors={serverErrors}
+        serverMessage={serverMessage}
+      />
+    );
+  } else if (route.path === '/submitted' && submitted) {
+    page = (
+      <SubmittedPage
+        claim={submitted.claim}
+        failedFiles={submitted.failedFiles}
+        uploadError={submitted.uploadError}
+        retrying={retrying}
+        onRetryUpload={retryUpload}
+        onNewClaim={() => navigate('/new', { dealer: submitted.claim.dealer.code })}
+        onDashboard={() => navigate('/', { dealer: submitted.claim.dealer.code })}
+      />
+    );
+  } else {
+    page = <Dashboard dealers={dealers} dealersError={dealersError} dealerCode={dealerCode} />;
   }
 
   return (
     <div className="app">
       <SiteHeader />
-      <main className="main">
-        {submitted ? (
-          <SubmittedPage
-            claim={submitted.claim}
-            failedFiles={submitted.failedFiles}
-            uploadError={submitted.uploadError}
-            retrying={retrying}
-            onRetryUpload={retryUpload}
-            onNewClaim={newClaim}
-          />
-        ) : (
-          <ClaimFormPage key={formKey} onSubmit={submit} serverErrors={serverErrors} serverMessage={serverMessage} />
-        )}
-      </main>
+      <main className={`main${page.type === Dashboard ? ' main--wide' : ''}`}>{page}</main>
       <SiteFooter />
 
       {progress && (

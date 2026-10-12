@@ -79,6 +79,43 @@ export interface ClaimDetailDto {
   descriptions: (DescriptionInput & { descriptionId: number; sdcAdjustment: number | null })[];
   attachments: AttachmentDto[];
   totals: ClaimTotalsDto;
+  explanationSdcAdjustments: string | null;
+  lastRejectionReason: string | null;
+  history: StatusHistoryDto[];
+}
+
+export interface StatusHistoryDto {
+  fromStatusId: number | null;
+  toStatusId: number;
+  reason: string | null;
+  changedBy: string;
+  changedAtUtc: string;
+}
+
+export interface ClaimSummaryDto {
+  headerId: number;
+  reportNumber: number;
+  dealerCode: string;
+  vin: string;
+  loadNumber: string | null;
+  dateSubmitted: string | null;
+  submittedBy: string | null;
+  status: StatusDto | null;
+}
+
+export interface PagedResult<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalCount: number;
+}
+
+export interface ClaimQuery {
+  statusId?: number;
+  dealerCode?: string;
+  vin?: string;
+  page?: number;
+  pageSize?: number;
 }
 
 /** Attachment limits configured in SDC.Api (Modules:TransportationClaims:Attachments). */

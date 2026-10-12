@@ -3,7 +3,18 @@
 React (Vite + TypeScript) website where dealers report transportation damage claims.
 It talks to the **Transportation Claims** section of `SDC.Api` (`..\SDC_API\src\SDC.Api`).
 
-Scope for now: **submit a claim only** (no login screen, no claim list).
+Scope for now: a **claims dashboard** per dealer, **read-only claim details**, and **submitting new claims**
+(no login screen, no editing or resubmitting).
+
+## Pages
+
+| URL | Page |
+| --- | --- |
+| `#/?dealer=100123` | Dashboard: one column per claim status (from `GET /statuses`), each listing that dealer's claims via `GET /?dealerCode=&statusId=` (25 per page, "Show more" loads the next page). VIN search filters every column. Users assigned to several dealers get a dealer selector. Clicking a column header collapses it (remembered per browser). Clicking a claim opens a details pop-up (`GET /{headerId}`): dealer & vehicle info, repair lines, totals and SDC-approved amounts, attachments (open/download), status history and the rejection reason. |
+| `#/new?dealer=100123` | New claim form, with the dashboard's dealer preselected. |
+| `#/submitted` | Confirmation after a submit, with links back to the dashboard or to another claim. |
+
+Hash URLs are used so the static build works on any web server without rewrite rules.
 
 ## Run locally
 
@@ -44,7 +55,8 @@ If the claim saves but some attachments fail, the confirmation page says so and 
 dev/apiAuthProxy.ts        dev-server sign-in + header injection
 src/api/                   API types (mirror ClaimContracts.cs) and fetch client
 src/claim/claimForm.ts     form state, validation, request mapping
-src/components/            form sections, confirmation page, header/footer
+src/lib/useHashRoute.ts    tiny hash router
+src/components/            dashboard + status columns, form sections, confirmation page, header/footer
 src/styles.css             Subaru palette and layout
 ```
 "# ClaimApp" 
