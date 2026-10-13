@@ -1,5 +1,5 @@
 import { MAX_REPAIR_LINES } from '../api/types';
-import { emptyLine, lineTotals, type FormErrors, type RepairLine } from '../claim/claimForm';
+import { HOURS_MAX, MONEY_MAX, emptyLine, lineTotals, type FormErrors, type RepairLine } from '../claim/claimForm';
 import { formatHours, formatMoney } from '../lib/format';
 import { Field, describedBy } from './Field';
 
@@ -66,6 +66,9 @@ export function RepairLines({ lines, errors, onChange }: Props) {
                           id={id}
                           inputMode="decimal"
                           autoComplete="off"
+                          // "100.00" / "99,999.99": the range itself is enforced by validate().
+                          maxLength={unit === 'hrs' ? 6 : 9}
+                          title={unit === 'hrs' ? `Up to ${HOURS_MAX} hours` : `Up to $${MONEY_MAX.toLocaleString('en-US')}`}
                           placeholder="0.00"
                           value={line[field]}
                           aria-invalid={!!err}

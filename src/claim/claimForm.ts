@@ -55,14 +55,16 @@ export const emptyForm = (dealerCode = ''): ClaimFormState => ({
   files: [],
 });
 
-const HOURS_MAX = 9999.99;
-const MONEY_MAX = 1_000_000;
+// Business limits per repair line (stricter than the API's 9,999.99 hours / $1,000,000).
+export const HOURS_MAX = 100;
+export const MONEY_MAX = 99_999;
 
 function checkNumber(value: string, max: number, label: string): string | null {
   const n = parseAmount(value);
   if (Number.isNaN(n)) return `${label} must be a number.`;
   if (n < 0) return `${label} cannot be negative.`;
-  if (n > max) return `${label} cannot exceed ${max.toLocaleString('en-US')}.`;
+  if (n > max)
+    return `${label} cannot exceed ${max === MONEY_MAX ? `$${max.toLocaleString('en-US')}` : `${max} hours`}.`;
   if (Math.round(n * 100) !== n * 100) return `${label} allows at most 2 decimals.`;
   return null;
 }
